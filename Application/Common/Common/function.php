@@ -82,6 +82,18 @@ function startCreateDB() {
     print_r($shStocks);
     $szStocks = getStockArray($ql->data[0][sz]);
     print_r($szStocks);
+    $dao = M("stock_id_tbl");
+    fillDB($dao, $shStocks, 'sh');
+    fillDB($dao, $szStocks, 'sz');
+}
+
+function fillDB($dao, $list, $type) {
+    foreach($list as $stock) {
+        $data[STOCK_ID] = $stock[code];
+        $data[STOCK_NAME] = $stock[name];
+        $data[STOCK_TYPE] = $type;
+        $dao->add($data);
+    }
 }
 
 function getStockArray($string) {
