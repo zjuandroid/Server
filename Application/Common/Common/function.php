@@ -36,7 +36,7 @@ function startCollect2(){
 //    dump(json_decode($res));
 }
 
-function startCollect() {
+function startCollect3() {
     $snoopy=new Snoopy();
     $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
     $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
@@ -47,13 +47,24 @@ function startCollect() {
     echo $snoopy->results;
 }
 
-function startCreateDB() {
+function startCollect() {
     $snoopy=new Snoopy();
     $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
     $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+    $post['telephone'] ='13186978264';//根据你要模拟登陆的网站具体的传值 名称来定
+    $post['password'] ='wc63650312';//根据你要模拟登陆的网站具体的传值 名称来定
+    $url='http://xueqiu.com/user/login';//登陆数据提交的URL地址
+    $snoopy->submit($url,$post);
+//    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+//    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
+//    $snoopy->fetch($url);
+
+
+}
+
+function startCreateDB() {
     $url = 'http://quote.eastmoney.com/stocklist.html';
-    $snoopy->fetch($url);//希望获取的页面数据
-    $html = $snoopy->results;
+    $html = getPage($url);
 //    echo $html;
     $rules = array(
 //        'sh' => array('.quotebody a', 'href')
@@ -85,6 +96,14 @@ function startCreateDB() {
     $dao = M("stock_id_tbl");
     fillDB($dao, $shStocks, 'sh');
     fillDB($dao, $szStocks, 'sz');
+}
+
+function getPage($url) {
+    $snoopy=new Snoopy();
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+    $snoopy->fetch($url);//希望获取的页面数据
+    return $snoopy->results;
 }
 
 function fillDB($dao, $list, $type) {

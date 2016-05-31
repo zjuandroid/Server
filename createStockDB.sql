@@ -9,7 +9,7 @@ STOCK_TYPE varchar(2) NOT NULL
 )CHARSET=utf8;
 create table stock_data_tbl
 (
-	  RECORD_ID bigint unsigned primary key not null auto_increment, #股票名称
+	  RECORD_ID bigint unsigned primary key not null auto_increment, #记录ID，主键
       STOCK_CODE varchar(8) NOT NULL, #股票代码，SZ指在深圳交易的股票
       CURRENT_DATE_INFO varchar(10), #当前显示股票信息的日期
       CURRENT_TIME_INFO varchar(8), #具体时间
