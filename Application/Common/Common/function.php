@@ -53,12 +53,31 @@ function startCollect() {
     $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
     $post['telephone'] ='13186978264';//根据你要模拟登陆的网站具体的传值 名称来定
     $post['password'] ='wc63650312';//根据你要模拟登陆的网站具体的传值 名称来定
-    $url='http://xueqiu.com/user/login';//登陆数据提交的URL地址
+    $url='https://xueqiu.com/user/login';//登陆数据提交的URL地址
     $snoopy->submit($url,$post);
 //    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
 //    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
 //    $snoopy->fetch($url);
 
+    $dao = M("stock_id_tbl");
+    $stockList = $dao->select();
+    foreach($stockList as $stock) {
+        $code = $stock[stock_type] + $stock[stock_id];
+        for($i = 1; ; $i++) {
+            $url = 'https://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=' + $code + '&hl=0&source=user&sort=time&page=' + i;
+            $snoopy->fetch($url);
+            $json = json_decode($snoopy->results);
+            $jsonList = $json->list;
+            for($j = 0; $j < sizeof($json->list); $j++) {
+                $jsonList[$j];
+            }
+
+        }
+    }
+//    $snoopy->fetch('https://xueqiu.com/statuses/search.json?count=20&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1');
+//    print_r($snoopy->results);
+//    $json = json_decode($snoopy->results);
+//    print_r(sizeof($json->list));
 
 }
 
