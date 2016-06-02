@@ -1,0 +1,236 @@
+<?php
+use QL\QueryList;
+use QL\Ext\Request;
+use QL\Snoopy;
+
+function startCollect1()
+{
+
+
+//采集某页面所有的图片
+    $data = QueryList::Query('http://cms.querylist.cc/bizhi/453.html', array(
+        'image' => array('img', 'src')
+    ))->data;
+//打印结果
+    print_r($data);
+
+//采集某页面所有的超链接
+//可以先手动获取要采集的页面源码
+    $html = file_get_contents('http://cms.querylist.cc/google/list_1.html');
+//然后可以把页面源码或者HTML片段传给QueryList
+    $data = QueryList::Query($html, array(
+        'link' => array('a', 'href')
+    ))->data;
+//打印结果
+    print_r($data);
+}
+
+function startCollect2()
+{
+    $urls = QueryList::run('Request', [
+        'target' => 'http://cms.querylist.cc/news/list_2.html',
+        'referrer' => 'http://cms.querylist.cc',
+        'method' => 'GET',
+        'params' => ['var1' => 'testvalue', 'var2' => 'somevalue'],
+        'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0',
+        'cookiePath' => './cookie.txt',
+        'timeout' => '30'
+    ])->setQuery(['link' => ['h2>a', 'href', '', function ($content) {
+        //利用回调函数补全相对链接
+        $baseUrl = 'http://cms.querylist.cc';
+        return $baseUrl . $content;
+    }]], '.cate_list li')->getData(function ($item) {
+        return $item['link'];
+    });
+
+//多线程扩展
+    QueryList::run('Multi', [
+        'list' => $urls,
+        'curl' => [
+            'opt' => array(
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_AUTOREFERER => true,
+            ),
+            //设置线程数
+            'maxThread' => 100,
+            //设置最大尝试数
+            'maxTry' => 3
+        ],
+        'success' => function ($a) {
+            //采集规则
+            $reg = array(
+                //采集文章标题
+                'title' => array('h1', 'text'),
+                //采集文章发布日期,这里用到了QueryList的过滤功能，过滤掉span标签和a标签
+                'date' => array('.pt_info', 'text', '-span -a', function ($content) {
+                    //用回调函数进一步过滤出日期
+                    $arr = explode(' ', $content);
+                    return $arr[0];
+                }),
+                //采集文章正文内容,利用过滤功能去掉文章中的超链接，但保留超链接的文字，并去掉版权、JS代码等无用信息
+                'content' => array('.post_content', 'html', 'a -.content_copyright -script', function ($content) {
+                    //利用回调函数下载文章中的图片并替换图片路径为本地路径
+                    //使用本例请确保当前目录下有image文件夹，并有写入权限
+                    //由于QueryList是基于phpQuery的，所以可以随时随地使用phpQuery，当然在这里也可以使用正则或者其它方式达到同样的目的
+                    $doc = phpQuery::newDocumentHTML($content);
+                    $imgs = pq($doc)->find('img');
+                    foreach ($imgs as $img) {
+                        $src = pq($img)->attr('src');
+                        $localSrc = 'image/' . md5($src) . '.jpg';
+                        $stream = file_get_contents($src);
+                        file_put_contents($localSrc, $stream);
+                        pq($img)->attr('src', $localSrc);
+                    }
+                    return $doc->htmlOuter();
+                })
+            );
+            $rang = '.content';
+            $ql = QueryList::Query($a['content'], $reg, $rang);
+            $data = $ql->getData();
+            //打印结果，实际操作中这里应该做入数据库操作
+            print_r($data);
+        }
+    ]);
+}
+
+function startCollect3() {
+    //模拟登陆
+    $login = QueryList::run('Login',[
+        'target' => 'http://xueqiu.com/user/login',
+        'method' => 'post',
+        'params' => ['telephone'=>'18121380371','password'=>'wc63650312','remember_me'=>'on'],
+        'user_agent'=>'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:21.0) Gecko/20100101 Firefox/21.0',
+        'cookiePath' => './cookie1234.txt'
+    ]);
+
+//    $data = $login->get('http://xueqiu.com/S/CSI930759')->setQuery(['title'=>['h1','text']])->data;
+//    $data = $login->get('http://xueqiu.com/S/CSI930759');
+
+    print_r($login->html);
+
+    $data = $login->get('http://xueqiu.com/cubes/rebalancing/show_origin.json?rb_id=15378807');
+    dump ($data->html);
+}
+
+
+
+function startCollect8() {
+    $snoopy = new Snoopy;
+
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+
+//    $url = "http://xueqiu.com/cubes/rebalancing/show_origin.json?rb_id=15326069";
+//    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1&_=1459261718254';
+//    $snoopy->fetch($url); //获取所有内容
+
+//    echo 'YYY'.'</br>';
+//    print $snoopy->getResults(); //显示结果
+
+    $data = file_get_contents($url);
+//    $data =  file_get_contents("http://www.zoneself.org/");
+    print_r($data);
+}
+
+function startCollect5() {
+    //模拟登陆
+    $login = QueryList::run('Login',[
+        'target' => 'http://xueqiu.com/user/login',
+        'method' => 'post',
+        'params' => ['telephone'=>'13186978264','password'=>'wc63650312','remember_me'=>'on'],
+//        'user_agent'=>'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36',
+        'user_agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36',
+        'cookiePath' => './cookie1234.txt'
+    ]);
+
+//    $data = $login->get('http://xueqiu.com/S/SZ002312');
+
+//    print_r($login->html);
+
+//    $data = $login->get('http://xueqiu.com/cubes/rebalancing/show_origin.json?rb_id=15378807');
+//    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
+    $data = $login->get($url);
+    print_r($data->html);
+
+}
+
+function startCollect6() {
+    $cookie_path = './'; //设置cookie保存路径
+
+    //-----登录要提交的表单数据---------------
+    $vars['telephone'] = '13186978264';
+    $vars['password'] = 'wc63650312';
+    $vars['remember_me'] = 'on';
+    //-------------------------------------
+    $method_post = true;
+    //登录提交的url地址(表单中的action的绝对地址)
+    $url = 'http://xueqiu.com/user/login';
+    //----------------------------
+
+    $ch = curl_init();
+    $params[CURLOPT_URL] = $url;    //请求url地址
+    $params[CURLOPT_HEADER] = true; //是否返回响应头信息
+    $params[CURLOPT_RETURNTRANSFER] = true; //是否将结果返回
+    $params[CURLOPT_FOLLOWLOCATION] = true; //是否重定向
+    $params[CURLOPT_USERAGENT] = 'Mozilla/5.0 (Windows NT 5.1; rv:9.0.1) Gecko/20100101 Firefox/9.0.1';
+
+    $postfields = '';
+    foreach ($vars as $key => $value){
+        $postfields .= urlencode($key) . '=' . urlencode($value) . '&';
+    }
+
+    $params[CURLOPT_POST] = true;
+    $params[CURLOPT_POSTFIELDS] = $postfields;
+
+    //判断是否有cookie,有的话直接使用
+    if (isset($_COOKIE['cookie_jar']) && ($_COOKIE['cookie_jar'] || is_file($_COOKIE['cookie_jar'])))
+    {
+        $params[CURLOPT_COOKIEFILE] = $_COOKIE['cookie_jar']; //这里判断cookie
+    }
+    else
+    {
+        $cookie_jar = tempnam($cookie_path, 'cookie'); //产生一个cookie文件
+        $params[CURLOPT_COOKIEJAR] = $cookie_jar; //写入cookie信息
+        setcookie('cookie_jar', $cookie_jar); //保存cookie路径
+    }
+    curl_setopt_array($ch, $params); //传入curl参数
+    $content = curl_exec($ch); //执行
+
+    echo '';
+//    echo $content; //输出登录结果
+
+    //---------登录成功后再次请求其他地址,如果有多个可以循环执行---------
+    echo '';
+
+//    $nexturl = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
+    $nexturl = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+    $params[CURLOPT_URL] = $nexturl;
+//    $params[CURLOPT_POST] = false;
+//    $params[CURLOPT_GET] = true;
+//    $params[CURLOPT_HEADER] = false;
+    $params[CURLOPT_POSTFIELDS] = '';
+    curl_setopt_array($ch, $params); //传入curl参数
+    $content = curl_exec($ch); //执行
+    echo $content; //输出请求结果
+    //-------------------------------------------------
+
+    curl_close($ch); //关闭连接
+}
+
+function startCollect0() {
+    $snoopy=new Snoopy();
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+    $post['telephone'] ='13186978264';//根据你要模拟登陆的网站具体的传值 名称来定
+    $post['password'] ='wc63650312';//根据你要模拟登陆的网站具体的传值 名称来定
+    $url='http://xueqiu.com/user/login';//登陆数据提交的URL地址
+    $snoopy->submit($url,$post);
+    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+//    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
+    $snoopy->fetch($url);//希望获取的页面数据
+    echo $snoopy->results;//输出结果，登陆成功
+}

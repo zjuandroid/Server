@@ -1,0 +1,91 @@
+<?php
+use Common\Tool\Snoopy;
+use Common\Tool\QueryList;
+use Common\Tool\phpQuery;
+//include_once '../Tool/QueryList.class.php';
+
+
+/**
+ * Created by PhpStorm.
+ * User: chwang
+ * Date: 2016/3/20
+ * Time: 16:27
+ */
+function startCollect1() {
+    $fileName = 'file.html';
+//    echo 'XXX'.'</br>';
+//    $url = "http://www.baidu.com";
+    $url = "http://xueqiu.com/S/SZ002312";
+//    $url = "http://www.dapenti.com/blog/more.asp?name=xilei&id=109836";
+    $snoopy = new Snoopy;
+
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+
+    $snoopy->fetch($url); //获取所有内容
+//    echo 'YYY'.'</br>';
+//    print $snoopy->getResults(); //显示结果
+    file_put_contents($fileName, $snoopy->results);
+}
+
+function startCollect2() {
+    $data = QueryList::Query('http://cms.querylist.cc/bizhi/453.html',array(
+        'image' => array('img','src')
+    ))->data;
+//打印结果
+    print_r($data);
+
+////采集某页面所有的超链接
+////可以先手动获取要采集的页面源码
+//    $html = file_get_contents('http://cms.querylist.cc/google/list_1.html');
+////然后可以把页面源码或者HTML片段传给QueryList
+//    $data = QueryList::Query($html,array(
+//        'link' => array('a','href')
+//    ))->data;
+////打印结果
+//    print_r($data);
+}
+
+function startCollect3() {
+    phpQuery::newDocumentFile('http://www.ido321.com/');
+    $artlist = Common\Tool\pq("article");
+    dump($artlist);
+    foreach($artlist as $title){
+        echo Common\Tool\pq($title)->find('h2')->html()."<br/>";
+    }
+}
+
+function startCollect()
+{
+    $fileName = 'file.html';
+//    echo 'XXX'.'</br>';
+//    $url = "http://www.baidu.com";
+    $url = "http://www.thinkphp.cn";
+//    $url = "http://www.dapenti.com/blog/more.asp?name=xilei&id=109836";
+    $snoopy = new Snoopy;
+
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+
+    $snoopy->fetch($url); //获取所有内容
+//    echo 'YYY'.'</br>';
+//    print $snoopy->getResults(); //显示结果
+    file_put_contents($fileName, $snoopy->results);
+
+    phpQuery::newDocumentHTML($snoopy->results);
+
+    $artlist = Common\Tool\pq(".index-bd");
+//    $artlist = Common\Tool\pq(".kkk");
+//    dump($artlist);
+    foreach($artlist as $li){
+//        dump($li);
+        echo ($li);
+//        echo Common\Tool\pq($li);
+//        echo Common\Tool\pq($li)->find('li:eq(5)')->html()."<br/>";
+    }
+}
+
+function startCollect6() {
+    $doc = \phpQuery::newDocumentFile('http://news.sina.com.cn/china');
+    echo pq(".blkTop h1:eq(0)")->html();
+}
