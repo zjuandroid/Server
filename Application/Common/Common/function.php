@@ -60,11 +60,11 @@ function startCollect() {
 //    $snoopy->fetch($url);
 
     $dao = M("stock_id_tbl");
-    $stockList = $dao->select();
+    $stockList = $dao->limit(1,10)->select();
     foreach($stockList as $stock) {
-        $code = $stock[stock_type] + $stock[stock_id];
+        $code = $stock['stock_type'] + $stock['stock_id'];
         for($i = 1; ; $i++) {
-            $url = 'https://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=' + $code + '&hl=0&source=user&sort=time&page=' + i;
+            $url = 'https://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=' + $code + '&hl=0&source=user&sort=time&page=' + $i;
             $snoopy->fetch($url);
             $json = json_decode($snoopy->results);
             $jsonList = $json->list;
