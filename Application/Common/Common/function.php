@@ -50,29 +50,48 @@ function startCollect3() {
 function startCollect() {
     $snoopy=new Snoopy();
     $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
-    $snoopy->referer = "http://www.ivsky.com/tupian/geguo_guoqi_v1773/";
+    $snoopy->referer = "https://xueqiu.com/user/login";
     $post['telephone'] ='13186978264';//根据你要模拟登陆的网站具体的传值 名称来定
     $post['password'] ='wc63650312';//根据你要模拟登陆的网站具体的传值 名称来定
     $url='https://xueqiu.com/user/login';//登陆数据提交的URL地址
-    $snoopy->submit($url,$post);
+    $flag = $snoopy->submit($url,$post);
 //    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
 //    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
 //    $snoopy->fetch($url);
 
-    $dao = M("stock_id_tbl");
-    $stockList = $dao->limit(1,10)->select();
+    $stockList = M("stock_id_tbl")->limit(1,1)->select();
+    $dao = M("stock_data_tbl");
     foreach($stockList as $stock) {
-        $code = $stock['stock_type'] + $stock['stock_id'];
-        for($i = 1; ; $i++) {
-            $url = 'https://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=' + $code + '&hl=0&source=user&sort=time&page=' + $i;
-            $snoopy->fetch($url);
+        $code = $stock['stock_type'].$stock['stock_id'];
+        $num = 0;
+        $pageCount = 10;
+        for($i = 1; $i <= 1; $i++) {
+            $url = 'https://xueqiu.com/statuses/search.json?count='.$pageCount.'&comment=0&symbol='.$code.'&hl=0&source=user&sort=time&page='.$i;
+            $flag = $snoopy->fetch($url);
             $json = json_decode($snoopy->results);
             $jsonList = $json->list;
-            for($j = 0; $j < sizeof($json->list); $j++) {
-                $jsonList[$j];
-            }
 
+            $time = strtotime('yesterday');
+
+//            dump($json);
+            dump($jsonList);
+//            dump($jsonList[$pageCount-1]['created_at']);
+//            if($jsonList[$pageCount-1]['created_at'] > $time) {
+//                $num += $pageCount;
+//                continue;
+//            }
+//            else {
+//                for($j = sizeof($jsonList)-1; $j >= 0; $j--) {
+//                    if($jsonList[$j]['created_at'] > $time) {
+//                        $num += $j + 1;
+//                        break 2;
+//                    }
+//                }
+//            }
         }
+        $data['XQ_NEW_POSTS'] = $num;
+        $flag = $dao->where('STOCK_CODE='.$code)->add($data);
+
     }
 //    $snoopy->fetch('https://xueqiu.com/statuses/search.json?count=20&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1');
 //    print_r($snoopy->results);
