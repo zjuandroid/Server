@@ -59,7 +59,9 @@ function startCollect() {
 //    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
 //    $snoopy->fetch($url);
 
-    $stockList = M("stock_id_tbl")->limit(0,10)->select();
+    dump('hhhh');
+    $stockList = M("stock_id_tbl")->limit(0,2)->select();
+    dump($stockList);
     $dao = M("stock_data_tbl");
     $time = strtotime('yesterday')*1000;
     $pageCount = 10;
@@ -78,14 +80,14 @@ function startCollect() {
 
             if($jsonList[count($jsonList)-1]->created_at > $time) {
                 $num += count($jsonList);
-//                dump($num);
+                dump($num);
                 continue;
             }
             else {
                 for($j = 0; $j < count($jsonList); $j++) {
                     if($jsonList[$j]->created_at > $time) {
                         $num++;
-//                        dump($num);
+                        dump($num);
                     }
                     else {
                         break 2;
