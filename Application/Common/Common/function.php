@@ -1,6 +1,7 @@
 <?php
 use QL\Snoopy;
 use QL\QueryList;
+use Think\Log;
 //import('Common.Tool.phpQuery');
 
 function startCollect1() {
@@ -47,7 +48,7 @@ function startCollect3() {
     echo $snoopy->results;
 }
 
-function startCollect() {
+function startCollectBak() {
     $snoopy=new Snoopy();
     $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
     $snoopy->referer = "https://xueqiu.com/user/login";
@@ -60,7 +61,7 @@ function startCollect() {
 //    $snoopy->fetch($url);
 
     dump('hhhh');
-    $stockList = M("stock_id_tbl")->limit(0,2)->select();
+    $stockList = M("stock_id_tbl")->limit(0,1)->select();
     dump($stockList);
     $dao = M("stock_data_tbl");
     $time = strtotime('yesterday')*1000;
@@ -75,43 +76,96 @@ function startCollect() {
             $json = json_decode($snoopy->results);
             $jsonList = $json->list;
 
-//            dump($jsonList[$pageCount-1]->created_at);
-//            dump($time);
-
             if($jsonList[count($jsonList)-1]->created_at > $time) {
                 $num += count($jsonList);
-                dump($num);
+                Log::record('num--->'.$num);
                 continue;
             }
             else {
                 for($j = 0; $j < count($jsonList); $j++) {
                     if($jsonList[$j]->created_at > $time) {
                         $num++;
-                        dump($num);
+                        Log::record('num--->'.$num);
                     }
                     else {
+                        $condition['STOCK_CODE'] = $data['STOCK_CODE'] = $code;
+                        $condition['CURRENT_DATE_INFO'] = $data['CURRENT_DATE_INFO'] = date("Y-m-d",strtotime("-1 day"));
+                        $data['XQ_NEW_POSTS'] = $num;
+                        if($dao->where($condition)->find()) {
+                            $dao->where($condition)->save($data);
+                        }
+                        else {
+                            $dao->add($data);
+                        }
+                        Log::record('num last--->'.$num);
                         break 2;
                     }
                 }
             }
         }
-        $condition['STOCK_CODE'] = $data['STOCK_CODE'] = $code;
-        $condition['CURRENT_DATE_INFO'] = $data['CURRENT_DATE_INFO'] = date("Y-m-d",strtotime("-1 day"));
-        $data['XQ_NEW_POSTS'] = $num;
-        if($dao->where($condition)->find()) {
-            $dao->where($condition)->save($data);
-        }
-        else {
-            $dao->add($data);
-        }
-
 
     }
 //    $snoopy->fetch('https://xueqiu.com/statuses/search.json?count=20&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1');
-//    print_r($snoopy->results);
-//    $json = json_decode($snoopy->results);
-//    print_r(sizeof($json->list));
+}
 
+function startCollect() {
+    set_time_limit(0);
+    $snoopy=new Snoopy();
+    $snoopy->agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.118 Safari/537.36";
+    $snoopy->referer = "https://xueqiu.com/user/login";
+    $post['telephone'] ='13186978264';//根据你要模拟登陆的网站具体的传值 名称来定
+    $post['password'] ='wc63650312';//根据你要模拟登陆的网站具体的传值 名称来定
+    $url='https://xueqiu.com/user/login';//登陆数据提交的URL地址
+    $flag = $snoopy->submit($url,$post);
+//    $url = 'http://xueqiu.com/cubes/discover/rank/cube/list.json?market=cn&sale_flag=0&stock_positions=0&sort=best_benefit&category=12&profit=monthly_gain&page=1&count=20';
+//    $url = 'http://xueqiu.com/statuses/search.json?count=10&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1';
+//    $snoopy->fetch($url);
+
+    $stockList = M("stock_id_tbl")->limit(1,1)->select();
+    dump($stockList);
+    $dao = M("stock_data_tbl");
+    $time = strtotime('yesterday')*1000;
+    $pageCount = 10;
+    foreach($stockList as $stock) {
+        $code = $stock['stock_type'].$stock['stock_id'];
+        $num = 0;
+
+        for($i = 1; $i < 200; $i++) {
+            $url = 'https://xueqiu.com/statuses/search.json?count='.$pageCount.'&comment=0&symbol='.$code.'&hl=0&source=user&sort=time&page='.$i;
+            $flag = $snoopy->fetch($url);
+            $json = json_decode($snoopy->results);
+            $jsonList = $json->list;
+
+            if($jsonList[count($jsonList)-1]->created_at > $time) {
+                $num += count($jsonList);
+                Log::record('num--->'.$num);
+                continue;
+            }
+            else {
+                for($j = 0; $j < count($jsonList); $j++) {
+                    if($jsonList[$j]->created_at > $time) {
+                        $num++;
+                        Log::record('num--->'.$num);
+                    }
+                    else {
+                        $condition['STOCK_CODE'] = $data['STOCK_CODE'] = $code;
+                        $condition['CURRENT_DATE_INFO'] = $data['CURRENT_DATE_INFO'] = date("Y-m-d",strtotime("-1 day"));
+                        $data['XQ_NEW_POSTS'] = $num;
+                        if($dao->where($condition)->find()) {
+                            $dao->where($condition)->save($data);
+                        }
+                        else {
+                            $dao->add($data);
+                        }
+                        Log::record('num last--->'.$num);
+                        break 2;
+                    }
+                }
+            }
+        }
+
+    }
+//    $snoopy->fetch('https://xueqiu.com/statuses/search.json?count=20&comment=0&symbol=SZ002312&hl=0&source=user&sort=time&page=1');
 }
 
 function startCreateDB() {
